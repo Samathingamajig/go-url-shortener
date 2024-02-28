@@ -103,10 +103,26 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func slugRedirectHandler(w http.ResponseWriter, r *http.Request) {
+	slug := r.PathValue("slug")
+
+	redirect, ok := redirects[slug]
+	if !ok {
+		http.Error(w, "Redirect not found.", http.StatusNotFound)
+		return
+	}
+
+	redirect.Uses++
+	redirects[slug] = redirect
+
+	http.Redirect(w, r, redirect.TargetUrl, http.StatusMovedPermanently)
+}
+
 func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/create", createHandler)
 	http.HandleFunc("/list", listHandler)
+	http.HandleFunc("/{slug}", slugRedirectHandler)
 
 	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 }
